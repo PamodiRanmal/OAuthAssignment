@@ -10,7 +10,7 @@ function onUploadComplete(e) {
 		var bar = document.getElementById('bar');
 		bar.style.width = '100%';
 		bar.innerHTML = '100% complete';
-		swal("Success!", "Finished uploading file(s)", "success");
+		swal("Success!", "Successfully Uploaded ", "success");
 	}
 }
 
@@ -64,7 +64,7 @@ function uploadNext() {
 // Start the process
 function startUpload() {
 	if (document.getElementById('files').files.length <= 0) {
-		swal("Cannot Upload!", "Please select file(s) to upload", "warning");
+		swal("No Files Selected!", "  Please select one or more files", "warning");
 	} else {
 		totalUploadedValue = filesUploaded = 0;
 		uploadNext();

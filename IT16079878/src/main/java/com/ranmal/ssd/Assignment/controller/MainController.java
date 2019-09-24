@@ -2,125 +2,90 @@ package com.ranmal.ssd.Assignment.controller;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
 import com.ranmal.ssd.Assignment.model.UploadFile;
 import com.ranmal.ssd.Assignment.service.AuthorizationService;
 import com.ranmal.ssd.Assignment.service.DriveService;
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 @Controller
 public class MainController {
 
-	private Logger logger = LoggerFactory.getLogger(MainController.class);
+	private Logger mylogger = LoggerFactory.getLogger(MainController.class);
 
 	@Autowired
-  AuthorizationService authorizationService;
+  AuthorizationService myauthorizationService;
 
 	@Autowired
-  DriveService driveService;
+  DriveService mydriveService;
 
-	/**
-	 * Handles the root request. Checks if user is already authenticated via SSO.
-	 *
-	 * @return
-	 * @throws Exception
-	 */
+	//To check whether the user is already authenticated
 	@GetMapping("/")
 	public String showHomePage() throws Exception {
-		if (authorizationService.isUserAuthenticated()) {
-			logger.debug("User is authenticated. Redirecting to home...");
+		if (myauthorizationService.isUserAuthenticated()) {
+			mylogger.debug("User is authenticated. Now redirecting to homepage");
 			return "redirect:/home";
 		} else {
-			logger.debug("User is not authenticated. Redirecting to sso...");
+			mylogger.debug("User is not authenticated. Redirecting to sso...");
 			return "redirect:/login";
 		}
 	}
 
-	/**
-	 * Directs to login
-	 *
-	 * @return
-	 */
+	// Login Page
 	@GetMapping("/login")
 	public String goToLogin() {
 		return "index.html";
 	}
 
-	/**
-	 * Directs to home
-	 *
-	 * @return
-	 */
+ //Home Page
 	@GetMapping("/home")
 	public String goToHome() {
 		return "home.html";
 	}
 
-	/**
-	 * Calls the Google OAuth service to authorize the app
-	 *
-	 * @param response
-	 * @throws Exception
-	 */
+
+	//Authorize the app with OAuth
 	@GetMapping("/googlesignin")
 	public void doGoogleSignIn(HttpServletResponse response) throws Exception {
-		logger.debug("SSO Called...");
-		response.sendRedirect(authorizationService.authenticateUserViaGoogle());
+		mylogger.debug("Called SSO ");
+		response.sendRedirect(myauthorizationService.authenticateUserViaGoogle());
 	}
 
-	/**
-	 * Applications Callback URI for redirection from Google auth server after user
-	 * approval/consent
-	 *
-	 * @param request
-	 * @return
-	 * @throws Exception
-	 */
-	@GetMapping("/oauth/callback")
-	public String saveAuthorizationCode(HttpServletRequest request) throws Exception {
-		logger.debug("SSO Callback invoked...");
-		String code = request.getParameter("code");
-		logger.debug("SSO Callback Code Value..., " + code);
+  //Call back URL
+  @GetMapping("/oauth/callback")
+  public String saveAuthorizationCode(HttpServletRequest request) throws Exception {
+    mylogger.debug("SSO Callback ");
+    String code = request.getParameter("code");
+    mylogger.debug("SSO Callback Code Value is , " + code);
 
-		if (code != null) {
-			authorizationService.exchangeCodeForTokens(code);
-			return "redirect:/home";
-		}
-		return "redirect:/login";
-	}
+    if (code != null) {
+      myauthorizationService.exchangeCodeForTokens(code);
+      return "redirect:/home";
+    }
+    return "redirect:/login";
+  }
 
-	/**
-	 * Handles logout
-	 *
-	 * @return
-	 * @throws Exception
-	 */
+  // To Handle file Upload To GDrive
+  @PostMapping("/upload")
+  public String uploadFile(HttpServletRequest request, @ModelAttribute UploadFile uploadedFile) throws Exception {
+    MultipartFile multipartFile = uploadedFile.getMultipartFile();
+    mydriveService.uploadFile(multipartFile);
+    return "redirect:/home?status=success";
+  }
+
+  	//To Handle Logout
 	@GetMapping("/logout")
 	public String logout(HttpServletRequest request) throws Exception {
-		logger.debug("Logout invoked...");
-		authorizationService.removeUserSession(request);
+		mylogger.debug("Logout invoked...");
+		myauthorizationService.removeUserSession(request);
 		return "redirect:/login";
 	}
 
-	/**
-	 * Handles the files being uploaded to GDrive
-	 *
-	 * @param request
-	 * @param uploadedFile
-	 * @return
-	 * @throws Exception
-	 */
-	@PostMapping("/upload")
-	public String uploadFile(HttpServletRequest request, @ModelAttribute UploadFile uploadedFile) throws Exception {
-		MultipartFile multipartFile = uploadedFile.getMultipartFile();
-		driveService.uploadFile(multipartFile);
-		return "redirect:/home?status=success";
-	}
+
 }
